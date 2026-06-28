@@ -1,0 +1,1710 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Motion Simulation | Internship Project</title>
+  <style>
+    :root{
+      --page:#f6f8fb;
+      --surface:#ffffff;
+      --soft:#f1f5f9;
+      --ink:#17202a;
+      --muted:#5d6d7e;
+      --line:#dce4ee;
+      --teal:#087f83;
+      --teal-dark:#075e62;
+      --amber:#d98c00;
+      --red:#e85d75;
+      --blue:#2563eb;
+      --shadow:0 10px 28px rgba(15,23,42,.08);
+      --radius:8px;
+    }
+
+    *{box-sizing:border-box}
+
+    html, body{
+      margin:0;
+      padding:0;
+      min-height:100vh;
+      overflow-x:hidden;
+      font-family:Arial, Helvetica, sans-serif;
+      color:var(--ink);
+      background: linear-gradient(180deg, #ffffff 0, var(--page) 270px), var(--page);
+    }
+
+    body{ line-height:1.55; }
+
+    .wrap{
+      width:min(1220px, calc(100% - 32px));
+      margin:0 auto;
+      padding:24px 0 42px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);
+      gap:18px;
+      align-items:stretch;
+      margin-bottom:18px;
+    }
+
+    .intro{
+      min-height:160px;
+      padding:28px 32px;
+      background: linear-gradient(135deg, rgba(8,127,131,.10), rgba(37,99,235,.06)), #ffffff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .intro::after{
+      content:"";
+      position:absolute;
+      right:28px;
+      top:28px;
+      width:120px;
+      height:120px;
+      border:1px solid rgba(8,127,131,.18);
+      border-radius:50%;
+      background:
+        linear-gradient(90deg, transparent 49%, rgba(8,127,131,.18) 50%, transparent 51%),
+        linear-gradient(0deg, transparent 49%, rgba(8,127,131,.18) 50%, transparent 51%);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    h1{
+      margin:0 0 6px;
+      font-size:clamp(1.6rem, 3vw, 2.8rem);
+      line-height:1.1;
+      position:relative;
+      z-index:1;
+    }
+
+    .intro p{
+      margin:0;
+      color:var(--muted);
+      font-size:.95rem;
+      position:relative;
+      z-index:1;
+    }
+
+    .module-tabs{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .eyebrow{
+      margin:0 0 8px;
+      color:var(--teal-dark);
+      font-weight:700;
+      text-transform:uppercase;
+      font-size:.76rem;
+      letter-spacing:.08em;
+    }
+
+    .tab-btns{
+      display:grid;
+      gap:8px;
+    }
+
+    .tab-btn{
+      min-height:44px;
+      border:2px solid var(--line);
+      border-radius:var(--radius);
+      padding:10px 14px;
+      color:var(--ink);
+      background:#f8fafc;
+      font-weight:700;
+      cursor:pointer;
+      font-size:.95rem;
+      text-align:left;
+      transition:all .2s;
+    }
+
+    .tab-btn:hover{ border-color:var(--teal); background:#eefafa; }
+    .tab-btn.active{ border-color:var(--teal); background:var(--teal); color:#fff; }
+
+    button{
+      min-height:40px;
+      border:0;
+      border-radius:var(--radius);
+      padding:10px 14px;
+      color:#ffffff;
+      background:var(--teal);
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 4px 12px rgba(15,139,141,.2);
+      font-size:.9rem;
+    }
+
+    button.secondary{
+      background:#263544;
+      box-shadow:none;
+    }
+
+    button.accent{
+      background:var(--amber);
+      box-shadow:0 4px 12px rgba(217,140,0,.2);
+    }
+
+    .ctrl-row{
+      display:flex;
+      gap:8px;
+    }
+
+    .ctrl-row button{ flex:1; }
+
+    /* MODULE PANELS */
+    .module-panel{ display:none; }
+    .module-panel.active{ display:block; }
+
+    .section{
+      margin-top:0;
+      padding:20px;
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    h2{ margin:0 0 14px; font-size:1.3rem; letter-spacing:0; }
+    h3{ margin:0 0 8px; font-size:1rem; letter-spacing:0; }
+
+    .module-layout{
+      display:grid;
+      grid-template-columns:220px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+
+    .ctrl-side{ display:grid; gap:12px; }
+
+    .card{
+      background:#f8fafc;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:14px;
+    }
+
+    label{
+      display:block;
+      color:var(--muted);
+      font-size:.85rem;
+      margin:10px 0 4px;
+    }
+
+    label:first-child{ margin-top:0; }
+
+    .slider-wrap{
+      display:grid;
+      grid-template-columns:1fr 38px;
+      gap:6px;
+      align-items:center;
+    }
+
+    input[type=range]{
+      width:100%;
+      accent-color:var(--teal);
+    }
+
+    .slider-val{
+      font-weight:700;
+      font-size:.95rem;
+      color:var(--teal-dark);
+      text-align:right;
+    }
+
+    /* LIVE VALUES */
+    .live-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .live-val{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:10px 12px;
+      text-align:center;
+    }
+
+    .live-val .lv-label{
+      display:block;
+      color:var(--muted);
+      font-size:.78rem;
+      margin-bottom:2px;
+    }
+
+    .live-val .lv-num{
+      display:block;
+      font-size:1.2rem;
+      font-weight:700;
+      color:var(--ink);
+    }
+
+    .live-val.hi .lv-num{ color:var(--teal); }
+    .live-val.warn .lv-num{ color:var(--amber); }
+
+    /* TIME SLICE CARDS */
+    .time-slices{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .ts-card{
+      background:#fff;
+      border:2px solid var(--line);
+      border-radius:var(--radius);
+      padding:10px 12px;
+      text-align:center;
+      transition:border-color .3s, background .3s;
+    }
+
+    .ts-card.active-t{
+      border-color:var(--teal);
+      background:#eefafa;
+    }
+
+    .ts-card .ts-t{
+      font-weight:700;
+      font-size:1rem;
+      color:var(--teal-dark);
+      margin-bottom:4px;
+    }
+
+    .ts-card .ts-row{
+      display:flex;
+      justify-content:space-between;
+      font-size:.8rem;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .ts-card .ts-row strong{ color:var(--ink); }
+
+    canvas{
+      width:100%;
+      border-radius:var(--radius);
+      border:1px solid var(--line);
+      display:block;
+      background:#f7fbff;
+    }
+
+    .formula-strip{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .formula-chip{
+      background:#fff9ed;
+      border:1px solid #efd29a;
+      border-radius:var(--radius);
+      padding:8px 10px;
+      font-size:.85rem;
+      color:#65460b;
+      font-weight:700;
+      text-align:center;
+    }
+
+    /* LIFT MODULE */
+    .lift-layout{
+      display:grid;
+      grid-template-columns:220px 220px 1fr 180px;
+      gap:16px;
+      align-items:start;
+    }
+
+    .direction-toggle{
+      display:grid;
+      gap:8px;
+      text-align:center;
+    }
+
+    .dir-btn{
+      font-size:1.8rem;
+      padding:12px;
+      border-radius:var(--radius);
+      border:2px solid var(--line);
+      background:#f8fafc;
+      color:var(--ink);
+      cursor:pointer;
+      font-weight:700;
+      transition:all .2s;
+    }
+
+    .dir-btn.active{ border-color:var(--teal); background:var(--teal); color:#fff; }
+
+    .weight-display{
+      background:#fff;
+      border:2px solid var(--line);
+      border-radius:var(--radius);
+      padding:14px;
+      text-align:center;
+    }
+
+    .weight-display .wd-val{
+      font-size:2rem;
+      font-weight:700;
+      color:var(--ink);
+      display:block;
+    }
+
+    .weight-display .wd-label{
+      font-size:.8rem;
+      color:var(--muted);
+    }
+
+    .weight-display.up .wd-val{ color:var(--teal); }
+    .weight-display.down .wd-val{ color:var(--red); }
+
+    /* PENDULUM MODULE */
+    .pend-layout{
+      display:grid;
+      grid-template-columns:200px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+
+    .period-display{
+      background:#eefafa;
+      border:2px solid #c8e7e8;
+      border-radius:var(--radius);
+      padding:14px;
+      text-align:center;
+      margin-top:8px;
+    }
+
+    .period-display .pd-val{
+      font-size:1.8rem;
+      font-weight:700;
+      color:var(--teal-dark);
+    }
+
+    .period-display .pd-label{
+      font-size:.8rem;
+      color:var(--muted);
+    }
+
+    /* 1D MOTION LAYOUT */
+    .m1-top-bar{
+      display:grid;
+      grid-template-columns:1fr auto auto;
+      gap:14px;
+      align-items:end;
+      margin-bottom:4px;
+    }
+
+    .m1-sliders{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+
+    .m1-slider-group label{
+      margin:0 0 4px;
+      font-size:.82rem;
+    }
+
+    .m1-live{
+      display:flex;
+      gap:8px;
+    }
+
+    .m1-live .live-val{
+      min-width:72px;
+      padding:8px 10px;
+    }
+
+    .m1-btns{
+      display:flex;
+      gap:8px;
+    }
+
+    .m1-btns button{
+      white-space:nowrap;
+    }
+
+    .m1-bottom-bar{
+      display:grid;
+      grid-template-columns:200px 1fr 1fr;
+      gap:14px;
+      margin-top:12px;
+      align-items:start;
+    }
+
+    .m1-snaps .time-slices{
+      grid-template-columns:1fr;
+    }
+
+    /* GRAPH SECTION */
+    .graph-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:14px;
+      margin-top:14px;
+    }
+
+    .graph-live{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      color:var(--muted);
+      font-size:.78rem;
+      margin-top:6px;
+    }
+
+    .graph-live strong{
+      color:var(--ink);
+      font-size:.86rem;
+    }
+
+    @media(max-width:980px){
+      .hero{ grid-template-columns:1fr; }
+      .module-layout, .pend-layout{ grid-template-columns:1fr; }
+      .graph-grid{ grid-template-columns:1fr; }
+      .lift-layout{ grid-template-columns:1fr 1fr; }
+      .m1-top-bar{ grid-template-columns:1fr; }
+      .m1-live{ flex-wrap:wrap; }
+      .m1-bottom-bar{ grid-template-columns:1fr 1fr; }
+      .m1-snaps{ grid-column:1/-1; }
+    }
+
+    @media(max-width:620px){
+      .wrap{ width:calc(100% - 20px); }
+      .live-grid, .time-slices, .formula-strip{ grid-template-columns:1fr; }
+      .lift-layout{ grid-template-columns:1fr; }
+      .time-slices{ grid-template-columns:1fr 1fr; }
+      .m1-bottom-bar{ grid-template-columns:1fr; }
+      .m1-sliders{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="intro">
+        <p class="eyebrow">Physics Virtual Lab</p>
+        <h1>Advanced Motion Simulation</h1>
+        <p>Select a module below and watch physics in motion with live values and real-time animation.</p>
+      </div>
+
+      <div class="module-tabs">
+        <p class="eyebrow">Choose Module</p>
+        <div class="tab-btns">
+          <button class="tab-btn active" onclick="switchModule('motion', this)">1D Motion</button>
+          <button class="tab-btn" onclick="switchModule('lift', this)">Lift System</button>
+          <button class="tab-btn" onclick="switchModule('pendulum', this)">Simple Pendulum</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== MODULE 1: 1D MOTION ======== -->
+    <div id="mod-motion" class="module-panel active">
+      <div class="section">
+        <h2>1D Motion (Uniform &amp; Accelerated Motion)</h2>
+
+        <!-- TOP ROW: controls bar -->
+        <div class="m1-top-bar">
+          <div class="m1-sliders">
+            <div class="m1-slider-group">
+              <label>u - Initial Velocity</label>
+              <div class="slider-wrap">
+                <input type="range" id="m1u" min="1" max="5" step="0.5" value="2" oninput="m1SliderUpdate()">
+                <span class="slider-val" id="m1u-val">2</span>
+              </div>
+            </div>
+            <div class="m1-slider-group">
+              <label>a - Acceleration</label>
+              <div class="slider-wrap">
+                <input type="range" id="m1a" min="1" max="5" step="0.5" value="2" oninput="m1SliderUpdate()">
+                <span class="slider-val" id="m1a-val">2</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="m1-live">
+            <div class="live-val hi">
+              <span class="lv-label">v (m/s)</span>
+              <span class="lv-num" id="m1-v">2.00</span>
+            </div>
+            <div class="live-val warn">
+              <span class="lv-label">s (m)</span>
+              <span class="lv-num" id="m1-s">0.00</span>
+            </div>
+            <div class="live-val">
+              <span class="lv-label">a (m/s^2)</span>
+              <span class="lv-num" id="m1-a">2.00</span>
+            </div>
+            <div class="live-val">
+              <span class="lv-label">t (s)</span>
+              <span class="lv-num" id="m1-t">0.00</span>
+            </div>
+          </div>
+
+          <div class="m1-btns">
+            <button onclick="m1Start()">Start</button>
+            <button class="secondary" onclick="m1Pause()">Pause</button>
+            <button class="secondary" onclick="m1Reset()">Reset</button>
+          </div>
+        </div>
+
+        <!-- MAIN CANVAS - full width, tall and open -->
+        <canvas id="m1Canvas" width="1200" height="300" style="margin-top:12px;"></canvas>
+
+        <!-- BOTTOM ROW: time slices + graphs + equations -->
+        <div class="m1-bottom-bar">
+
+          <!-- Time snapshots -->
+          <div class="m1-snaps">
+            <div class="eyebrow" style="margin-bottom:6px;">Snapshots</div>
+            <div class="time-slices">
+              <div class="ts-card" id="ts1">
+                <div class="ts-t">t = 1s</div>
+                <div class="ts-row"><span>v:</span><strong id="ts1v">-</strong></div>
+                <div class="ts-row"><span>s:</span><strong id="ts1s">-</strong></div>
+              </div>
+              <div class="ts-card" id="ts2">
+                <div class="ts-t">t = 2s</div>
+                <div class="ts-row"><span>v:</span><strong id="ts2v">-</strong></div>
+                <div class="ts-row"><span>s:</span><strong id="ts2s">-</strong></div>
+              </div>
+              <div class="ts-card" id="ts3">
+                <div class="ts-t">t = 3s</div>
+                <div class="ts-row"><span>v:</span><strong id="ts3v">-</strong></div>
+                <div class="ts-row"><span>s:</span><strong id="ts3s">-</strong></div>
+              </div>
+            </div>
+            <div class="eyebrow" style="margin:10px 0 6px;">Equations</div>
+            <div class="formula-strip" style="grid-template-columns:1fr;">
+              <div class="formula-chip">v = u + at</div>
+              <div class="formula-chip">s = ut + 0.5at^2</div>
+              <div class="formula-chip">v^2 = u^2 + 2as</div>
+            </div>
+          </div>
+
+          <!-- Graphs -->
+          <div class="card" style="padding:10px;">
+            <div class="eyebrow" style="margin-bottom:4px;">Velocity vs Time</div>
+            <canvas id="m1vGraph" width="600" height="160"></canvas>
+            <div class="graph-live"><span>Current marker</span><strong id="m1vTrack">t 0.00s, v 2.00 m/s</strong></div>
+          </div>
+          <div class="card" style="padding:10px;">
+            <div class="eyebrow" style="margin-bottom:4px;">Displacement vs Time</div>
+            <canvas id="m1sGraph" width="600" height="160"></canvas>
+            <div class="graph-live"><span>Current marker</span><strong id="m1sTrack">t 0.00s, s 0.00 m</strong></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== MODULE 2: LIFT SYSTEM ======== -->
+    <div id="mod-lift" class="module-panel">
+      <div class="section">
+        <h2>Lift System (Acceleration &amp; Forces)</h2>
+        <div class="lift-layout">
+
+          <!-- Controls -->
+          <div class="ctrl-side">
+            <div class="card">
+              <h3>Person's Mass</h3>
+              <label>Mass m (kg)</label>
+              <div class="slider-wrap">
+                <input type="range" id="liftM" min="40" max="120" step="5" value="70" oninput="liftUpdate()">
+                <span class="slider-val" id="liftM-val">70</span>
+              </div>
+              <label>Lift Acceleration a (m/s^2)</label>
+              <div class="slider-wrap">
+                <input type="range" id="liftAcc" min="0" max="5" step="0.5" value="0" oninput="liftUpdate()">
+                <span class="slider-val" id="liftAcc-val">0</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Direction</div>
+              <div class="direction-toggle">
+                <button class="dir-btn" id="btn-up" onclick="setLiftDir('up')">Up</button>
+                <button class="dir-btn active" id="btn-stop" onclick="setLiftDir('stop')">Stop</button>
+                <button class="dir-btn" id="btn-down" onclick="setLiftDir('down')">Down</button>
+              </div>
+            </div>
+
+            <div class="ctrl-row">
+              <button onclick="liftStart()">Start</button>
+              <button class="secondary" onclick="liftStop()">Stop</button>
+              <button class="secondary" onclick="liftReset()">Reset</button>
+            </div>
+          </div>
+
+          <!-- Free Body Diagram -->
+          <div>
+            <div class="eyebrow" style="margin-bottom:6px;">Free Body Diagram</div>
+            <canvas id="liftFbdCanvas" width="260" height="420"></canvas>
+          </div>
+
+          <!-- Lift Canvas -->
+          <div>
+            <canvas id="liftCanvas" width="400" height="420"></canvas>
+          </div>
+
+          <!-- Apparent weight display -->
+          <div class="ctrl-side">
+            <div class="weight-display" id="weightDisplay">
+              <div class="wd-label">True Weight</div>
+              <span class="wd-val" id="trueW">686 N</span>
+              <hr style="border:none;border-top:1px solid var(--line);margin:8px 0;">
+              <div class="wd-label">Apparent Weight</div>
+              <span class="wd-val" id="appW">686 N</span>
+              <div class="wd-label" style="margin-top:6px;" id="weightNote">Lift stationary</div>
+            </div>
+
+            <div class="live-grid" style="grid-template-columns:1fr;">
+              <div class="live-val hi">
+                <span class="lv-label">Direction</span>
+                <span class="lv-num" id="liftDirLbl">Stationary</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Current floor</span>
+                <span class="lv-num" id="liftFloorLbl">2</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Height (m)</span>
+                <span class="lv-num" id="liftHeightLbl">4.0</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Time (s)</span>
+                <span class="lv-num" id="liftTimeLbl">0.00</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Velocity (m/s)</span>
+                <span class="lv-num" id="liftVelLbl">0.00</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="eyebrow" style="margin-bottom:6px;">Formula</div>
+              <div class="formula-strip" style="grid-template-columns:1fr;">
+                <div class="formula-chip">W' = m(g +/- a)</div>
+                <div class="formula-chip" style="background:#eef5ff;border-color:#b8d4f5;color:#1e3a6e;">Up: W' = m(g + a)</div>
+                <div class="formula-chip" style="background:#fff0f3;border-color:#f5b8c4;color:#6e1e2a;">Down: W' = m(g - a)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== MODULE 3: PENDULUM ======== -->
+    <div id="mod-pendulum" class="module-panel">
+      <div class="section">
+        <h2>Simple Pendulum (Oscillation)</h2>
+        <div class="pend-layout">
+
+          <!-- Controls -->
+          <div class="ctrl-side">
+            <div class="card">
+              <h3>Parameters</h3>
+              <label>Length L (0.2 - 3 m)</label>
+              <div class="slider-wrap">
+                <input type="range" id="pendL" min="0.2" max="3" step="0.1" value="1" oninput="pendUpdate()">
+                <span class="slider-val" id="pendL-val">1.0</span>
+              </div>
+              <label>Gravity g (1 - 20 m/s^2)</label>
+              <div class="slider-wrap">
+                <input type="range" id="pendG" min="1" max="20" step="0.1" value="9.8" oninput="pendUpdate()">
+                <span class="slider-val" id="pendG-val">9.8</span>
+              </div>
+              <label>Initial angle theta (5 - 45 deg)</label>
+              <div class="slider-wrap">
+                <input type="range" id="pendTheta" min="5" max="45" step="1" value="30" oninput="pendUpdate()">
+                <span class="slider-val" id="pendTheta-val">30</span>
+              </div>
+            </div>
+
+            <div class="ctrl-row">
+              <button onclick="pendStart()">Start</button>
+              <button class="secondary" onclick="pendPause()">Pause</button>
+              <button class="secondary" onclick="pendReset()">Reset</button>
+            </div>
+
+            <div class="period-display">
+              <div class="pd-label">Time Period T</div>
+              <div class="pd-val" id="pendPeriod">2.01 s</div>
+              <div class="pd-label" style="margin-top:4px;">T = 2pi sqrt(L/g)</div>
+            </div>
+
+            <div class="live-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="live-val hi">
+                <span class="lv-label">L (m)</span>
+                <span class="lv-num" id="pend-L-live">1.0</span>
+              </div>
+              <div class="live-val warn">
+                <span class="lv-label">g (m/s^2)</span>
+                <span class="lv-num" id="pend-g-live">9.8</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Current angle</span>
+                <span class="lv-num" id="pend-theta-live">30.0 deg</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Angular velocity</span>
+                <span class="lv-num" id="pend-omega-live">0.00</span>
+              </div>
+              <div class="live-val">
+                <span class="lv-label">Time (s)</span>
+                <span class="lv-num" id="pend-time-live">0.00</span>
+              </div>
+            </div>
+
+            <div class="card" style="font-size:.85rem; color:var(--muted);">
+              <strong style="color:var(--ink);">Quick facts</strong><br>
+              Longer L: slower swing<br>
+              Higher g: faster swing<br>
+              Mass has no effect
+            </div>
+          </div>
+
+          <!-- Pendulum Canvas -->
+          <div>
+            <canvas id="pendCanvas" width="700" height="480"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    /* ========== TAB SWITCHING ========== */
+    function switchModule(mod, btn) {
+      document.querySelectorAll('.module-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('mod-' + mod).classList.add('active');
+      if(btn) btn.classList.add('active');
+      if(mod === 'motion') m1Init();
+      if(mod === 'lift') liftInit();
+      if(mod === 'pendulum') pendInit();
+    }
+
+    /* ============================================================
+       MODULE 1 - 1D MOTION
+    ============================================================ */
+    const m1c = document.getElementById('m1Canvas');
+    const m1ctx = m1c.getContext('2d');
+    const m1vg = document.getElementById('m1vGraph');
+    const m1vgctx = m1vg.getContext('2d');
+    const m1sg = document.getElementById('m1sGraph');
+    const m1sgctx = m1sg.getContext('2d');
+
+    let m1Running = false, m1RAF;
+    let m1t = 0, m1u = 2, m1a = 2;
+    let m1vData = [], m1sData = [];
+    let m1snapDone = [false, false, false];
+
+    function m1SliderUpdate(){
+      m1u = parseFloat(document.getElementById('m1u').value);
+      m1a = parseFloat(document.getElementById('m1a').value);
+      document.getElementById('m1u-val').textContent = m1u;
+      document.getElementById('m1a-val').textContent = m1a;
+      if(!m1Running){
+        m1t = 0;
+        m1vData = m1PreviewData('v');
+        m1sData = m1PreviewData('s');
+        m1UpdateLiveUI(m1u,0,0);
+        m1UpdateGraphTrackers(m1u, 0, 0);
+        m1DrawBall();
+        m1DrawGraph(m1vgctx, m1vData, '#2563eb', 'v (m/s)', 'v', true);
+        m1DrawGraph(m1sgctx, m1sData, '#e85d75', 's (m)', 's', true);
+      }
+    }
+
+    function m1UpdateLiveUI(v, s, t){
+      document.getElementById('m1-v').textContent = v.toFixed(2);
+      document.getElementById('m1-s').textContent = s.toFixed(2);
+      document.getElementById('m1-a').textContent = m1a.toFixed(2);
+      document.getElementById('m1-t').textContent = t.toFixed(2);
+    }
+
+    function m1UpdateGraphTrackers(v, s, t){
+      document.getElementById('m1vTrack').textContent = 't '+t.toFixed(2)+'s, v '+v.toFixed(2)+' m/s';
+      document.getElementById('m1sTrack').textContent = 't '+t.toFixed(2)+'s, s '+s.toFixed(2)+' m';
+    }
+
+    function m1SnapSlice(n, v, s){
+      document.getElementById('ts'+n+'v').textContent = v.toFixed(2)+' m/s';
+      document.getElementById('ts'+n+'s').textContent = s.toFixed(2)+' m';
+      document.getElementById('ts'+n).classList.add('active-t');
+      setTimeout(()=>document.getElementById('ts'+n).classList.remove('active-t'), 600);
+    }
+
+    function m1ComputeState(t){
+      const v = m1u + m1a * t;
+      const s = m1u * t + 0.5 * m1a * t * t;
+      return { v, s };
+    }
+
+    function m1PreviewData(){
+      const data = [];
+      for(let i=0;i<=50;i++){
+        const t = i / 10;
+        const { v, s } = m1ComputeState(t);
+        data.push({ t, v, s, preview:true });
+      }
+      return data;
+    }
+
+    function m1DrawBall(){
+      const W = m1c.width, H = m1c.height;
+      m1ctx.clearRect(0,0,W,H);
+
+      // Background
+      const bg = m1ctx.createLinearGradient(0,0,W,H);
+      bg.addColorStop(0,'#eaf4ff'); bg.addColorStop(1,'#dbeeff');
+      m1ctx.fillStyle = bg;
+      m1ctx.fillRect(0,0,W,H);
+
+      // Grid lines
+      m1ctx.strokeStyle = 'rgba(39,74,120,.1)';
+      m1ctx.lineWidth = 1;
+      for(let i=0;i<W;i+=60){ m1ctx.beginPath(); m1ctx.moveTo(i,0); m1ctx.lineTo(i,H); m1ctx.stroke(); }
+
+      // Ground
+      m1ctx.fillStyle = '#2a3e54';
+      m1ctx.fillRect(0, H-30, W, 30);
+      m1ctx.fillStyle = '#cfd9e6';
+      m1ctx.fillRect(0, H-28, W, 10);
+
+      // Tick marks
+      m1ctx.fillStyle = '#546b86';
+      m1ctx.font = '11px Arial';
+      m1ctx.textAlign = 'center';
+      for(let i=0;i<W;i+=100){
+        m1ctx.fillRect(i, H-40, 2, 12);
+        m1ctx.fillText(Math.round(i/5)+'m', i, H-42);
+      }
+
+      // Velocity arrow
+      const { v, s } = m1ComputeState(m1t);
+      const ballX = Math.min(30 + s * 5, W - 30);
+
+      // Acceleration arrow (drawn above the velocity arrow, distinct color)
+      const accLen = Math.max(10, Math.min(Math.abs(m1a) * 14, 100));
+      const accDir = m1a >= 0 ? 1 : -1;
+      m1ctx.strokeStyle = '#d98c00';
+      m1ctx.lineWidth = 3;
+      m1ctx.beginPath();
+      m1ctx.moveTo(ballX, H-85);
+      m1ctx.lineTo(ballX + accLen * accDir, H-85);
+      m1ctx.stroke();
+      m1ctx.fillStyle = '#d98c00';
+      m1ctx.beginPath();
+      m1ctx.moveTo(ballX + accLen * accDir, H-85);
+      m1ctx.lineTo(ballX + (accLen-8) * accDir, H-91);
+      m1ctx.lineTo(ballX + (accLen-8) * accDir, H-79);
+      m1ctx.closePath();
+      m1ctx.fill();
+
+      // Acceleration label above arrow
+      m1ctx.fillStyle = '#d98c00';
+      m1ctx.font = 'bold 12px Arial';
+      m1ctx.textAlign = 'center';
+      m1ctx.fillText('a = '+m1a.toFixed(2)+' m/s^2', ballX + (accLen * accDir)/2, H-94);
+
+      // Arrow
+      const arrowLen = Math.max(10, Math.min(v * 10, 100));
+      m1ctx.strokeStyle = '#087f83';
+      m1ctx.lineWidth = 3;
+      m1ctx.beginPath();
+      m1ctx.moveTo(ballX, H-55);
+      m1ctx.lineTo(ballX + arrowLen, H-55);
+      m1ctx.stroke();
+      m1ctx.fillStyle = '#087f83';
+      m1ctx.beginPath();
+      m1ctx.moveTo(ballX + arrowLen, H-55);
+      m1ctx.lineTo(ballX + arrowLen - 8, H-61);
+      m1ctx.lineTo(ballX + arrowLen - 8, H-49);
+      m1ctx.closePath();
+      m1ctx.fill();
+
+      // Velocity label above arrow
+      m1ctx.fillStyle = '#087f83';
+      m1ctx.font = 'bold 12px Arial';
+      m1ctx.textAlign = 'center';
+      m1ctx.fillText('v = '+v.toFixed(2)+' m/s', ballX + arrowLen/2, H-62);
+
+      // Ball
+      m1ctx.shadowColor = 'rgba(232,93,117,.4)';
+      m1ctx.shadowBlur = 12;
+      m1ctx.fillStyle = '#e85d75';
+      m1ctx.beginPath();
+      m1ctx.arc(ballX, H-50, 16, 0, Math.PI*2);
+      m1ctx.fill();
+      m1ctx.shadowBlur = 0;
+
+      // Displacement label below
+      m1ctx.fillStyle = '#d98c00';
+      m1ctx.font = 'bold 12px Arial';
+      m1ctx.textAlign = 'center';
+      m1ctx.fillText('s = '+s.toFixed(2)+' m', ballX, H-10);
+
+      // Time label
+      m1ctx.fillStyle = '#17202a';
+      m1ctx.font = 'bold 13px Arial';
+      m1ctx.textAlign = 'left';
+      m1ctx.fillText('t = '+m1t.toFixed(2)+' s', 12, 20);
+
+      // Short explanation text to guide what students should notice
+      m1ctx.fillStyle = '#5d6d7e';
+      m1ctx.font = '12px Arial';
+      m1ctx.textAlign = 'right';
+      const m1ExplainText = m1a > 0
+        ? 'Velocity increases when acceleration is positive'
+        : (m1a < 0 ? 'Velocity decreases when acceleration is negative' : 'Velocity stays constant when acceleration is zero');
+      m1ctx.fillText(m1ExplainText, W-12, 20);
+    }
+
+    function m1DrawGraph(ctx, data, color, label, yKey, preview=false){
+      const W = ctx.canvas.width, H = ctx.canvas.height;
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,W,H);
+
+      // Grid
+      ctx.strokeStyle = '#e2ecf5';
+      ctx.lineWidth = 1;
+      for(let i=0;i<W;i+=50){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke(); }
+      for(let j=0;j<H;j+=30){ ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(W,j); ctx.stroke(); }
+
+      // Axes
+      ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(40,10); ctx.lineTo(40,H-25); ctx.lineTo(W-10,H-25); ctx.stroke();
+
+      // Labels
+      ctx.fillStyle = '#374151'; ctx.font = '11px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('t (s)', W/2, H-4);
+      ctx.save(); ctx.translate(12, H/2); ctx.rotate(-Math.PI/2);
+      ctx.fillText(label, 0, 0); ctx.restore();
+
+      if(data.length < 2) return;
+      const maxT = Math.max(5, data[data.length-1].t);
+      const maxY = Math.max(1, ...data.map(d=>Math.abs(d[yKey])));
+      const scaleX = (W - 60) / maxT;
+      const scaleY = (H - 55) / (maxY * 1.18);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'right';
+      for(let i=0;i<=4;i++){
+        const value = maxY * i / 4;
+        const py = H - 27 - value * scaleY;
+        ctx.fillText(value.toFixed(value >= 10 ? 0 : 1), 36, py+3);
+      }
+      ctx.textAlign = 'center';
+      for(let i=0;i<=5;i++){
+        const tx = maxT * i / 5;
+        const px = 42 + tx * scaleX;
+        ctx.fillText(tx.toFixed(0), px, H-14);
+      }
+
+      ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+      ctx.globalAlpha = preview ? .55 : 1;
+      if(preview) ctx.setLineDash([7,5]);
+      ctx.beginPath();
+      data.forEach((d,i)=>{
+        const px = 42 + d.t * scaleX;
+        const py = H - 27 - d[yKey] * scaleY;
+        if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+
+      const last = preview ? data[0] : data[data.length-1];
+      const markerX = Math.min(W-12, 42 + last.t * scaleX);
+      const markerY = H - 27 - last[yKey] * scaleY;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(markerX, markerY, 4.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const txt = yKey + ' = ' + last[yKey].toFixed(2);
+      const boxW = Math.max(72, ctx.measureText(txt).width + 16);
+      const boxX = Math.max(46, Math.min(W - boxW - 8, markerX - boxW / 2));
+      const boxY = Math.max(8, markerY - 30);
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(boxX, boxY, boxW, 22, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#17202a';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(txt, boxX + boxW/2, boxY + 15);
+    }
+
+    let m1LastT = 0;
+    function m1Loop(){
+      if(!m1Running) return;
+      m1t += 0.016;
+      const { v, s } = m1ComputeState(m1t);
+      m1vData.push({ t:m1t, v });
+      m1sData.push({ t:m1t, s });
+      m1UpdateLiveUI(v, s, m1t);
+      m1UpdateGraphTrackers(v, s, m1t);
+      m1DrawBall();
+      m1DrawGraph(m1vgctx, m1vData, '#2563eb', 'v (m/s)', 'v');
+      m1DrawGraph(m1sgctx, m1sData, '#e85d75', 's (m)', 's');
+
+      // Time snaps
+      [1,2,3].forEach((sec,idx)=>{
+        if(!m1snapDone[idx] && m1t >= sec){
+          const st = m1ComputeState(sec);
+          m1SnapSlice(sec, st.v, st.s);
+          m1snapDone[idx] = true;
+        }
+      });
+
+      if(s >= (m1c.width - 60) / 5) { m1Running = false; return; }
+      m1RAF = requestAnimationFrame(m1Loop);
+    }
+
+    function m1Init(){
+      m1t = 0; m1vData = []; m1sData = [];
+      m1snapDone = [false,false,false];
+      m1u = parseFloat(document.getElementById('m1u').value);
+      m1a = parseFloat(document.getElementById('m1a').value);
+      // reset slice cards
+      [1,2,3].forEach(n=>{
+        document.getElementById('ts'+n+'v').textContent = '-';
+        document.getElementById('ts'+n+'s').textContent = '-';
+        document.getElementById('ts'+n).classList.remove('active-t');
+      });
+      m1UpdateLiveUI(m1u, 0, 0);
+      m1UpdateGraphTrackers(m1u, 0, 0);
+      m1DrawBall();
+      m1vData = m1PreviewData();
+      m1sData = m1PreviewData();
+      m1DrawGraph(m1vgctx, m1vData, '#2563eb', 'v (m/s)', 'v', true);
+      m1DrawGraph(m1sgctx, m1sData, '#e85d75', 's (m)', 's', true);
+    }
+
+    function m1Start(){
+      if(!m1Running){
+        if(m1t === 0){ m1vData = [{ t:0, v:m1u, s:0 }]; m1sData = [{ t:0, v:m1u, s:0 }]; }
+        m1Running=true;
+        m1Loop();
+      }
+    }
+    function m1Pause(){ m1Running=false; cancelAnimationFrame(m1RAF); }
+    function m1Reset(){ m1Pause(); m1Init(); }
+
+    /* ============================================================
+       MODULE 2 - LIFT SYSTEM
+    ============================================================ */
+    const liftC = document.getElementById('liftCanvas');
+    const liftCtx = liftC.getContext('2d');
+    const liftFbdC = document.getElementById('liftFbdCanvas');
+    const liftFbdCtx = liftFbdC.getContext('2d');
+    let liftDir = 'stop'; // 'up' | 'stop' | 'down'
+    let liftRunning = false, liftRAF;
+    let liftPhase = 'stationary'; // 'accelerating' | 'constant' | 'decelerating' | 'stationary'
+    let liftOffset = 0, liftVelocity = 0;
+    let liftTime = 0, liftLastFrame = 0;
+    const LIFT_G = 9.8;
+
+    function liftFloorStops(){
+      const cabinH = 82;
+      const top = 38;
+      const bottom = liftC.height - 38 - cabinH;
+      return [top, top + (bottom-top)/3, top + 2*(bottom-top)/3, bottom];
+    }
+
+    function setLiftDir(d){
+      liftDir = d;
+      ['up','stop','down'].forEach(k=>{
+        document.getElementById('btn-'+k).classList.toggle('active', k===d);
+      });
+      liftUpdate();
+    }
+
+    function liftMovementState(){
+      const stops = liftFloorStops();
+      const nearestIndex = stops.reduce((best, y, i)=> Math.abs(y-liftOffset) < Math.abs(stops[best]-liftOffset) ? i : best, 0);
+      const floor = 4 - nearestIndex;
+      const travelPx = stops[stops.length-1] - stops[0];
+      const height = ((stops[stops.length-1] - liftOffset) / travelPx) * 9;
+      return { floor, height: Math.max(0, Math.min(9, height)) };
+    }
+
+    function liftUpdateMovementUI(){
+      const state = liftMovementState();
+      document.getElementById('liftFloorLbl').textContent = state.floor;
+      document.getElementById('liftHeightLbl').textContent = state.height.toFixed(1);
+      document.getElementById('liftTimeLbl').textContent = liftTime.toFixed(2);
+      document.getElementById('liftVelLbl').textContent = Math.abs(liftVelocity).toFixed(2);
+    }
+
+    function liftUpdate(){
+      const m = parseFloat(document.getElementById('liftM').value);
+      const a = parseFloat(document.getElementById('liftAcc').value);
+      document.getElementById('liftM-val').textContent = m;
+      document.getElementById('liftAcc-val').textContent = a;
+
+      const trueW = (m * LIFT_G).toFixed(1);
+      let appW, note, cls;
+      if(liftDir === 'up'){
+        appW = (m * (LIFT_G + a)).toFixed(1);
+        note = 'Moving up - weight increases';
+        cls = 'up';
+        document.getElementById('liftDirLbl').textContent = 'Upward';
+      } else if(liftDir === 'down'){
+        appW = (m * (LIFT_G - a)).toFixed(1);
+        note = 'Moving down - weight decreases';
+        cls = 'down';
+        document.getElementById('liftDirLbl').textContent = 'Downward';
+      } else {
+        appW = trueW;
+        note = 'Stationary';
+        cls = '';
+        document.getElementById('liftDirLbl').textContent = 'Stationary';
+      }
+      document.getElementById('trueW').textContent = trueW + ' N';
+      document.getElementById('appW').textContent = appW + ' N';
+      document.getElementById('weightNote').textContent = note;
+      const wd = document.getElementById('weightDisplay');
+      wd.className = 'weight-display ' + cls;
+      liftDrawFBD();
+      liftUpdateMovementUI();
+      if(!liftRunning) liftDraw();
+    }
+
+    function liftDrawArrow(ctx, x1, y1, x2, y2, color, label, labelX, labelY){
+      const angle = Math.atan2(y2-y1, x2-x1);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2,y2);
+      ctx.lineTo(x2 - 10*Math.cos(angle - Math.PI/6), y2 - 10*Math.sin(angle - Math.PI/6));
+      ctx.lineTo(x2 - 10*Math.cos(angle + Math.PI/6), y2 - 10*Math.sin(angle + Math.PI/6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = 'bold 13px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, labelX, labelY);
+    }
+
+    function liftDrawFBD(){
+      const ctx = liftFbdCtx;
+      const W = liftFbdC.width, H = liftFbdC.height;
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = '#f7fbff';
+      ctx.fillRect(0,0,W,H);
+
+      const m = parseFloat(document.getElementById('liftM').value);
+      const a = parseFloat(document.getElementById('liftAcc').value);
+      const mg = m * LIFT_G;
+      let normal = mg;
+      if(liftDir === 'up') normal = m * (LIFT_G + a);
+      if(liftDir === 'down') normal = m * (LIFT_G - a);
+
+      ctx.fillStyle = '#17202a';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Forces on passenger', W/2, 28);
+
+      const cx = W/2, cy = H/2 + 20;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(cx-34, cy-34, 68, 68, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#334155';
+      ctx.font = 'bold 12px Arial';
+      ctx.fillText('m', cx, cy+4);
+
+      const upLen = Math.min(130, 58 + normal / 12);
+      const downLen = Math.min(130, 58 + mg / 12);
+      liftDrawArrow(ctx, cx, cy-34, cx, cy-34-upLen, '#087f83', 'N = '+normal.toFixed(0)+' N', cx+12, cy-44-upLen);
+      liftDrawArrow(ctx, cx, cy+34, cx, cy+34+downLen, '#e85d75', 'mg = '+mg.toFixed(0)+' N', cx+12, cy+48+downLen);
+
+      if(liftDir !== 'stop'){
+        const sign = liftDir === 'up' ? -1 : 1;
+        const label = liftDir === 'up' ? 'a upward' : 'a downward';
+        liftDrawArrow(ctx, 42, cy, 42, cy + sign * 70, '#d98c00', label, 54, cy + sign * 76);
+      }
+
+      ctx.fillStyle = '#5d6d7e';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('g = 9.8 m/s2', W/2, H-18);
+    }
+
+    function liftDraw(){
+      const W = liftC.width, H = liftC.height;
+      liftCtx.clearRect(0,0,W,H);
+
+      // BG
+      liftCtx.fillStyle = '#f0f6ff';
+      liftCtx.fillRect(0,0,W,H);
+
+      // Motion phase badge - highlights starting/accelerating, constant velocity, stopping/decelerating
+      const phaseInfo = {
+        accelerating: { label: 'ACCELERATING', color: '#d98c00', text: 'Lift is speeding up' },
+        constant:     { label: 'CONSTANT VELOCITY', color: '#087f83', text: 'Speed is steady, acceleration is zero' },
+        decelerating: { label: 'DECELERATING', color: '#e85d75', text: 'Lift is slowing down' },
+        stationary:   { label: 'STATIONARY', color: '#5d6d7e', text: 'Lift is at rest' }
+      }[liftPhase];
+      liftCtx.fillStyle = phaseInfo.color;
+      liftCtx.font = 'bold 13px Arial';
+      liftCtx.textAlign = 'center';
+      liftCtx.fillText(phaseInfo.label, W/2, 14);
+
+      // Building shaft
+      liftCtx.fillStyle = '#d1dce8';
+      liftCtx.fillRect(100,20,200,H-40);
+      liftCtx.strokeStyle = '#9aabba';
+      liftCtx.lineWidth = 2;
+      liftCtx.strokeRect(100,20,200,H-40);
+
+      // Floor lines
+      const cabinH = 82, cabinW = 160;
+      const cabinX = 120;
+      const stops = liftFloorStops();
+      liftCtx.setLineDash([4,4]);
+      liftCtx.strokeStyle = '#b8c7d6';
+      liftCtx.lineWidth = 1;
+      stops.forEach((topY, i)=>{
+        const fy = topY + cabinH/2;
+        liftCtx.beginPath(); liftCtx.moveTo(100,fy); liftCtx.lineTo(300,fy); liftCtx.stroke();
+        liftCtx.fillStyle='#8aa1bb'; liftCtx.font='11px Arial';
+        liftCtx.textAlign='left';
+        liftCtx.fillText('Floor '+(4-i), 62, fy+4);
+      });
+      liftCtx.setLineDash([]);
+
+      // Lift cabin
+      const cabinY = liftOffset;
+
+      // Cable
+      liftCtx.strokeStyle = '#374151'; liftCtx.lineWidth = 3;
+      liftCtx.beginPath(); liftCtx.moveTo(200, 20); liftCtx.lineTo(200, cabinY); liftCtx.stroke();
+
+      // Cabin body
+      const cabinGrad = liftCtx.createLinearGradient(cabinX, 0, cabinX+cabinW, 0);
+      cabinGrad.addColorStop(0,'#dceef8'); cabinGrad.addColorStop(1,'#c8dfed');
+      liftCtx.fillStyle = cabinGrad;
+      liftCtx.strokeStyle = '#2c3e50'; liftCtx.lineWidth = 3;
+      liftCtx.beginPath();
+      liftCtx.roundRect(cabinX, cabinY, cabinW, cabinH, 6);
+      liftCtx.fill(); liftCtx.stroke();
+
+      // Window
+      liftCtx.fillStyle = '#b8d8f0';
+      liftCtx.fillRect(cabinX+10, cabinY+10, 60, 28);
+      liftCtx.fillRect(cabinX+90, cabinY+10, 60, 28);
+
+      // Person inside
+      liftCtx.fillStyle = '#2c3e50';
+      // Body
+      liftCtx.fillRect(192, cabinY+44, 16, 30);
+      // Head
+      liftCtx.beginPath();
+      liftCtx.arc(200, cabinY+37, 9, 0, Math.PI*2);
+      liftCtx.fill();
+
+      // Scale under feet
+      liftCtx.fillStyle = '#546b86';
+      liftCtx.fillRect(182, cabinY+72, 36, 8);
+
+      // Weighing machine value on scale
+      const m = parseFloat(document.getElementById('liftM').value);
+      const a = parseFloat(document.getElementById('liftAcc').value);
+      let appW = m * LIFT_G;
+      if(liftDir==='up') appW = m*(LIFT_G+a);
+      if(liftDir==='down') appW = m*(LIFT_G-a);
+      liftCtx.fillStyle = '#e85d75';
+      liftCtx.font = 'bold 11px Arial';
+      liftCtx.textAlign = 'center';
+      liftCtx.fillText(appW.toFixed(0)+'N', 200, cabinY+80);
+
+      // Direction arrow outside
+      if(liftDir !== 'stop'){
+        const arrowDir = liftDir === 'up' ? -1 : 1;
+        const ax = 320, ay = cabinY + cabinH/2;
+        liftCtx.strokeStyle = liftDir==='up' ? '#087f83' : '#e85d75';
+        liftCtx.lineWidth = 4;
+        liftCtx.beginPath();
+        liftCtx.moveTo(ax, ay);
+        liftCtx.lineTo(ax, ay + arrowDir * 50);
+        liftCtx.stroke();
+        // Arrowhead
+        liftCtx.fillStyle = liftDir==='up' ? '#087f83' : '#e85d75';
+        liftCtx.beginPath();
+        const tipY = ay + arrowDir * 50;
+        liftCtx.moveTo(ax, tipY);
+        liftCtx.lineTo(ax-8, tipY - arrowDir*14);
+        liftCtx.lineTo(ax+8, tipY - arrowDir*14);
+        liftCtx.closePath();
+        liftCtx.fill();
+
+        liftCtx.fillStyle = liftDir==='up' ? '#087f83' : '#e85d75';
+        liftCtx.font = 'bold 13px Arial';
+        liftCtx.textAlign = 'left';
+        liftCtx.fillText(liftDir==='up'?'UP':'DOWN', 334, ay+4);
+      }
+
+      // Gravity + explanation label
+      liftCtx.fillStyle = '#374151'; liftCtx.font = '12px Arial';
+      liftCtx.textAlign = 'center';
+      liftCtx.fillText('g = 9.8 m/s2  |  '+phaseInfo.text, 200, H-10);
+    }
+
+    let liftAnimDir = 1;
+    function liftAnimLoop(timestamp){
+      if(!liftRunning) return;
+      const dt = liftLastFrame ? Math.min((timestamp - liftLastFrame) / 1000, 0.05) : 0.016;
+      liftLastFrame = timestamp;
+      const stops = liftFloorStops();
+      const pxPerMeter = (stops[stops.length-1] - stops[0]) / 9;
+      const a = parseFloat(document.getElementById('liftAcc').value);
+      const targetSpeed = liftDir === 'stop' ? 0 : Math.min(3, 1 + a * 0.35);
+      const targetVelocity = liftDir === 'up' ? targetSpeed : (liftDir === 'down' ? -targetSpeed : 0);
+
+      // Ramp velocity toward target using the acceleration slider, so the lift
+      // genuinely passes through accelerating -> constant velocity -> decelerating
+      const rampRate = Math.max(0.6, a) * 1.4; // m/s per second
+      const diff = targetVelocity - liftVelocity;
+      const maxStep = rampRate * dt;
+      if(Math.abs(diff) <= maxStep){
+        liftVelocity = targetVelocity;
+      } else {
+        liftVelocity += Math.sign(diff) * maxStep;
+      }
+
+      // Determine current motion phase for highlighting
+      if(Math.abs(liftVelocity) < 0.02 && Math.abs(targetVelocity) < 0.02){
+        liftPhase = 'stationary';
+      } else if(Math.abs(diff) > 0.05){
+        liftPhase = (Math.abs(targetVelocity) < 0.02) ? 'decelerating' : 'accelerating';
+      } else {
+        liftPhase = 'constant';
+      }
+
+      liftTime += dt;
+      liftOffset -= liftVelocity * pxPerMeter * dt;
+      liftOffset = Math.max(stops[0], Math.min(liftOffset, stops[stops.length-1]));
+      liftUpdateMovementUI();
+      liftDraw();
+      liftRAF = requestAnimationFrame(liftAnimLoop);
+    }
+
+    function liftInit(){
+      liftOffset = liftFloorStops()[2];
+      liftTime = 0;
+      liftVelocity = 0;
+      liftLastFrame = 0;
+      liftPhase = 'stationary';
+      liftUpdate();
+      liftDraw();
+    }
+
+    function liftStart(){
+      if(!liftRunning){
+        liftLastFrame = 0;
+        liftRunning=true;
+        liftRAF = requestAnimationFrame(liftAnimLoop);
+      }
+    }
+
+    function liftStop(){
+      liftRunning=false;
+      cancelAnimationFrame(liftRAF);
+      const stops = liftFloorStops();
+      liftOffset = stops.reduce((nearest, y)=> Math.abs(y-liftOffset) < Math.abs(nearest-liftOffset) ? y : nearest, stops[0]);
+      liftVelocity = 0;
+      liftLastFrame = 0;
+      liftPhase = 'stationary';
+      liftUpdateMovementUI();
+      liftDraw();
+    }
+
+    function liftReset(){
+      liftRunning=false;
+      cancelAnimationFrame(liftRAF);
+      setLiftDir('stop');
+      liftOffset = liftFloorStops()[2];
+      liftTime = 0;
+      liftVelocity = 0;
+      liftLastFrame = 0;
+      liftPhase = 'stationary';
+      liftUpdate();
+      liftDraw();
+    }
+
+    /* ============================================================
+       MODULE 3 - PENDULUM
+    ============================================================ */
+    const pendC = document.getElementById('pendCanvas');
+    const pendCtx = pendC.getContext('2d');
+    let pendRunning = false, pendRAF;
+    let pendAngle = Math.PI/6, pendOmega = 0, pendT = 0;
+    let pendLVal = 1, pendGVal = 9.8, pendThetaDeg = 30;
+
+    function pendUpdateLiveValues(){
+      document.getElementById('pend-theta-live').textContent = (pendAngle * 180 / Math.PI).toFixed(1) + ' deg';
+      document.getElementById('pend-omega-live').textContent = pendOmega.toFixed(2);
+      document.getElementById('pend-time-live').textContent = pendT.toFixed(2);
+    }
+
+    function pendUpdate(){
+      pendLVal = parseFloat(document.getElementById('pendL').value);
+      pendGVal = parseFloat(document.getElementById('pendG').value);
+      pendThetaDeg = parseFloat(document.getElementById('pendTheta').value);
+      document.getElementById('pendL-val').textContent = pendLVal.toFixed(1);
+      document.getElementById('pendG-val').textContent = pendGVal.toFixed(1);
+      document.getElementById('pendTheta-val').textContent = pendThetaDeg.toFixed(0);
+      document.getElementById('pend-L-live').textContent = pendLVal.toFixed(1);
+      document.getElementById('pend-g-live').textContent = pendGVal.toFixed(1);
+      const T = 2 * Math.PI * Math.sqrt(pendLVal / pendGVal);
+      document.getElementById('pendPeriod').textContent = T.toFixed(2) + ' s';
+      if(!pendRunning){
+        pendAngle = pendThetaDeg * Math.PI / 180;
+        pendOmega = 0;
+        pendT = 0;
+        pendUpdateLiveValues();
+        pendDraw();
+      }
+    }
+
+    function pendDraw(){
+      const W = pendC.width, H = pendC.height;
+      pendCtx.clearRect(0,0,W,H);
+
+      // BG
+      const bg = pendCtx.createLinearGradient(0,0,W,H);
+      bg.addColorStop(0,'#eaf4ff'); bg.addColorStop(1,'#dbeeff');
+      pendCtx.fillStyle = bg;
+      pendCtx.fillRect(0,0,W,H);
+
+      // Ceiling
+      pendCtx.fillStyle = '#2a3e54';
+      pendCtx.fillRect(0,0,W,18);
+
+      const pivotX = W/2, pivotY = 18;
+      const scale = 120; // pixels per meter
+      const ropeLen = pendLVal * scale;
+      const bobX = pivotX + ropeLen * Math.sin(pendAngle);
+      const bobY = pivotY + ropeLen * Math.cos(pendAngle);
+
+      // Faint arc trail
+      pendCtx.strokeStyle = 'rgba(8,127,131,.12)';
+      pendCtx.lineWidth = 2;
+      pendCtx.beginPath();
+      pendCtx.arc(pivotX, pivotY, ropeLen, Math.PI/2 - Math.PI/5, Math.PI/2 + Math.PI/5);
+      pendCtx.stroke();
+
+      // Rope
+      pendCtx.strokeStyle = '#374151';
+      pendCtx.lineWidth = 2.5;
+      pendCtx.beginPath();
+      pendCtx.moveTo(pivotX, pivotY);
+      pendCtx.lineTo(bobX, bobY);
+      pendCtx.stroke();
+
+      // Pivot
+      pendCtx.fillStyle = '#2c3e50';
+      pendCtx.beginPath();
+      pendCtx.arc(pivotX, pivotY, 7, 0, Math.PI*2);
+      pendCtx.fill();
+
+      // Bob
+      pendCtx.shadowColor = 'rgba(37,99,235,.4)';
+      pendCtx.shadowBlur = 16;
+      pendCtx.fillStyle = '#2563eb';
+      pendCtx.beginPath();
+      pendCtx.arc(bobX, bobY, 22, 0, Math.PI*2);
+      pendCtx.fill();
+      pendCtx.shadowBlur = 0;
+
+      // Highlight
+      pendCtx.fillStyle = 'rgba(255,255,255,.3)';
+      pendCtx.beginPath();
+      pendCtx.arc(bobX-6, bobY-6, 8, 0, Math.PI*2);
+      pendCtx.fill();
+
+      // Velocity arrow - tangent to the swing arc, length scales with angular velocity
+      // This makes "v = 0 at extremes" and "v = max at center" visible, not just numeric
+      const linSpeed = Math.abs(pendOmega) * ropeLen / scale; // approx linear speed in m/s
+      const velArrowLen = Math.min(70, 16 + linSpeed * 22);
+      const tangentSign = pendOmega >= 0 ? 1 : -1;
+      // Tangent direction (perpendicular to rope, in direction of motion)
+      const tanX = Math.cos(pendAngle) * tangentSign;
+      const tanY = -Math.sin(pendAngle) * tangentSign;
+      if(Math.abs(pendOmega) > 0.02){
+        const vEndX = bobX + tanX * velArrowLen;
+        const vEndY = bobY + tanY * velArrowLen;
+        pendCtx.strokeStyle = '#e85d75';
+        pendCtx.lineWidth = 3;
+        pendCtx.beginPath();
+        pendCtx.moveTo(bobX, bobY);
+        pendCtx.lineTo(vEndX, vEndY);
+        pendCtx.stroke();
+        const vAngle = Math.atan2(vEndY-bobY, vEndX-bobX);
+        pendCtx.fillStyle = '#e85d75';
+        pendCtx.beginPath();
+        pendCtx.moveTo(vEndX, vEndY);
+        pendCtx.lineTo(vEndX - 9*Math.cos(vAngle-Math.PI/6), vEndY - 9*Math.sin(vAngle-Math.PI/6));
+        pendCtx.lineTo(vEndX - 9*Math.cos(vAngle+Math.PI/6), vEndY - 9*Math.sin(vAngle+Math.PI/6));
+        pendCtx.closePath();
+        pendCtx.fill();
+        pendCtx.font = 'bold 11px Arial';
+        pendCtx.textAlign = tanX >= 0 ? 'left' : 'right';
+        pendCtx.fillText('v', vEndX + (tanX>=0?6:-6), vEndY+4);
+      }
+
+      // Length label
+      pendCtx.strokeStyle = '#d98c00';
+      pendCtx.lineWidth = 1.5;
+      pendCtx.setLineDash([4,3]);
+      pendCtx.beginPath();
+      pendCtx.moveTo(pivotX, pivotY);
+      pendCtx.lineTo(pivotX, pivotY + ropeLen);
+      pendCtx.stroke();
+      pendCtx.setLineDash([]);
+      pendCtx.fillStyle = '#d98c00';
+      pendCtx.font = 'bold 13px Arial';
+      pendCtx.textAlign = 'left';
+      pendCtx.fillText('L = '+pendLVal.toFixed(1)+' m', pivotX+10, pivotY + ropeLen/2);
+
+      // Angle arc follows the same signed theta used for the bob position.
+      pendCtx.strokeStyle = '#e85d75'; pendCtx.lineWidth = 1.8;
+      pendCtx.beginPath();
+      const arcR = 42;
+      const steps = Math.max(8, Math.ceil(Math.abs(pendAngle) * 36));
+      for(let i=0;i<=steps;i++){
+        const a = pendAngle * i / steps;
+        const x = pivotX + arcR * Math.sin(a);
+        const y = pivotY + arcR * Math.cos(a);
+        if(i===0) pendCtx.moveTo(x,y); else pendCtx.lineTo(x,y);
+      }
+      pendCtx.stroke();
+      pendCtx.fillStyle = '#e85d75'; pendCtx.font = '12px Arial';
+      const labelA = pendAngle / 2;
+      const labelX = pivotX + 58 * Math.sin(labelA);
+      const labelY = pivotY + 58 * Math.cos(labelA);
+      pendCtx.textAlign = pendAngle >= 0 ? 'left' : 'right';
+      pendCtx.fillText('theta = '+((pendAngle)*180/Math.PI).toFixed(1)+' deg', labelX, labelY);
+
+      // Period display
+      const T = 2 * Math.PI * Math.sqrt(pendLVal / pendGVal);
+      pendCtx.fillStyle = '#17202a'; pendCtx.font = 'bold 14px Arial';
+      pendCtx.textAlign = 'center';
+      pendCtx.fillText('T = '+T.toFixed(2)+' s', W/2, H-32);
+
+      // Extreme vs center state badge - "v = 0 at extreme" / "v = max at center"
+      const thetaMaxRad = pendThetaDeg * Math.PI / 180;
+      const swingFraction = thetaMaxRad > 0 ? Math.abs(pendAngle) / thetaMaxRad : 0;
+      let stateLabel, stateColor, stateText;
+      if(swingFraction > 0.9){
+        stateLabel = 'AT EXTREME: v = 0';
+        stateColor = '#e85d75';
+        stateText = 'Pendulum momentarily stops at the extreme position';
+      } else if(swingFraction < 0.15){
+        stateLabel = 'AT CENTER: v = max';
+        stateColor = '#087f83';
+        stateText = 'Pendulum moves fastest as it passes through the center';
+      } else {
+        stateLabel = 'IN BETWEEN';
+        stateColor = '#5d6d7e';
+        stateText = 'Speed increases as the pendulum swings toward the center';
+      }
+      pendCtx.fillStyle = stateColor;
+      pendCtx.font = 'bold 13px Arial';
+      pendCtx.textAlign = 'center';
+      pendCtx.fillText(stateLabel, W/2, H-16);
+
+      pendCtx.fillStyle = '#5d6d7e';
+      pendCtx.font = '11px Arial';
+      pendCtx.textAlign = 'left';
+      pendCtx.fillText(stateText, 12, H-2);
+    }
+
+    function pendLoop(){
+      if(!pendRunning) return;
+      const dt = 0.016;
+      const alpha = -(pendGVal / pendLVal) * Math.sin(pendAngle);
+      pendOmega += alpha * dt;
+      pendAngle += pendOmega * dt;
+      pendT += dt;
+      pendUpdateLiveValues();
+      pendDraw();
+      pendRAF = requestAnimationFrame(pendLoop);
+    }
+
+    function pendInit(){
+      pendThetaDeg = parseFloat(document.getElementById('pendTheta').value);
+      pendAngle = pendThetaDeg * Math.PI / 180;
+      pendOmega = 0;
+      pendT = 0;
+      pendUpdate();
+      pendDraw();
+    }
+
+    function pendStart(){
+      if(!pendRunning){ pendRunning=true; pendLoop(); }
+    }
+
+    function pendPause(){
+      pendRunning = false;
+      cancelAnimationFrame(pendRAF);
+    }
+
+    function pendReset(){
+      pendRunning = false;
+      cancelAnimationFrame(pendRAF);
+      pendInit();
+    }
+
+    /* ============================================================
+       INIT
+    ============================================================ */
+    m1Init();
+    liftInit();
+    pendInit();
+  </script>
+</body>
+</html>
